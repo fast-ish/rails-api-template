@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${{values.name}}-config
+  labels:
+    app: ${{values.name}}
+data:
+  RAILS_ENV: "production"
+  RAILS_LOG_TO_STDOUT: "true"
+  FORCE_SSL: "true"
+  HOST: "${{values.name}}.example.com"
+  CORS_ORIGINS: "https://${{values.name}}.example.com"

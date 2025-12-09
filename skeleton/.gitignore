@@ -1,0 +1,46 @@
+# Bundler
+/.bundle
+/vendor/bundle
+
+# Logs
+/log/*
+!/log/.keep
+
+# Temp files
+/tmp/*
+!/tmp/.keep
+!/tmp/pids
+/tmp/pids/*
+!/tmp/pids/.keep
+
+# Storage
+/storage/*
+!/storage/.keep
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Credentials
+/config/master.key
+/config/credentials/*.key
+
+# Test
+/coverage/
+/spec/examples.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bootsnap
+/tmp/cache/bootsnap*

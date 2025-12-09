@@ -1,0 +1,102 @@
+source "https://rubygems.org"
+
+ruby "${{values.rubyVersion}}.0"
+
+# Rails
+gem "rails", "~> ${{values.railsVersion}}"
+gem "puma", ">= 6.0"
+gem "bootsnap", require: false
+
+# API
+gem "rack-cors"
+gem "oj" # Fast JSON parsing
+
+{%- if values.serializer == "alba" %}
+gem "alba"
+{%- endif %}
+{%- if values.serializer == "blueprinter" %}
+gem "blueprinter"
+{%- endif %}
+{%- if values.serializer == "jsonapi-serializer" %}
+gem "jsonapi-serializer"
+{%- endif %}
+
+{%- if values.pagination == "pagy" %}
+gem "pagy"
+{%- endif %}
+{%- if values.pagination == "kaminari" %}
+gem "kaminari"
+{%- endif %}
+
+{%- if values.database == "aurora-postgresql" %}
+# Database
+gem "pg"
+{%- endif %}
+{%- if values.database == "aurora-mysql" %}
+# Database
+gem "mysql2"
+{%- endif %}
+
+{%- if values.cache == "elasticache-redis" %}
+# Redis
+gem "redis", ">= 5.0"
+gem "hiredis-client"
+{%- endif %}
+
+{%- if values.jobProcessor == "sidekiq" %}
+# Background Jobs
+gem "sidekiq", ">= 7.0"
+{%- endif %}
+{%- if values.jobProcessor == "solid-queue" %}
+# Background Jobs
+gem "solid_queue"
+{%- endif %}
+
+{%- if values.actionCable %}
+# WebSockets
+gem "redis", ">= 5.0"
+{%- endif %}
+
+{%- if values.authentication == "devise-jwt" %}
+# Authentication
+gem "devise"
+gem "devise-jwt"
+{%- endif %}
+{%- if values.authentication == "doorkeeper" %}
+# Authentication
+gem "doorkeeper"
+gem "bcrypt"
+{%- endif %}
+
+# Observability (OpenTelemetry + Grafana)
+gem "opentelemetry-sdk"
+gem "opentelemetry-exporter-otlp"
+gem "opentelemetry-instrumentation-all"
+gem "lograge"
+gem "logstash-event"
+
+# Health & Utilities
+gem "health_check"
+
+group :development, :test do
+  gem "debug", platforms: %i[mri windows]
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "rubocop", require: false
+  gem "rubocop-rails", require: false
+  gem "rubocop-rspec", require: false
+  gem "rubocop-performance", require: false
+  gem "brakeman", require: false
+  gem "bundler-audit", require: false
+end
+
+group :test do
+  gem "shoulda-matchers"
+  gem "simplecov", require: false
+  gem "webmock"
+  gem "vcr"
+  {%- if values.database != "none" %}
+  gem "database_cleaner-active_record"
+  {%- endif %}
+end

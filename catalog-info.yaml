@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Template
+metadata:
+  name: rails-api-golden-path
+  title: Rails API (Golden Path)
+  description: Production-ready Rails API with Grafana observability, authentication, and background jobs
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - rails
+    - ruby
+    - api
+    - backend
+    - golden-path
+    - recommended
+spec:
+  type: service
+  lifecycle: production
+  owner: platform

@@ -1,0 +1,211 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: rails-api-template
+  title: Rails API (Golden Path)
+  description: Production-ready Rails API with Grafana observability and enterprise patterns
+  tags:
+    - rails
+    - ruby
+    - api
+    - golden-path
+spec:
+  owner: platform
+  type: service
+
+  parameters:
+    - title: Component Info
+      required:
+        - name
+        - owner
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          pattern: '^[a-z][a-z0-9-]*$'
+          ui:autofocus: true
+        owner:
+          title: Owner Team
+          type: string
+          description: Team that owns this component
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+        description:
+          title: Description
+          type: string
+          description: Description of this component
+
+    - title: Runtime
+      properties:
+        rubyVersion:
+          title: Ruby Version
+          type: string
+          enum:
+            - "3.3"
+            - "3.2"
+          enumNames:
+            - "3.3 (Recommended)"
+            - "3.2 (LTS)"
+          default: "3.3"
+        railsVersion:
+          title: Rails Version
+          type: string
+          enum:
+            - "8.0"
+            - "7.2"
+          enumNames:
+            - "8.0 (Latest)"
+            - "7.2 (LTS)"
+          default: "8.0"
+
+    - title: Data Layer
+      properties:
+        database:
+          title: Database
+          type: string
+          enum:
+            - aurora-postgresql
+            - aurora-mysql
+            - none
+          enumNames:
+            - "Aurora PostgreSQL (Recommended)"
+            - "Aurora MySQL"
+            - "None"
+          default: aurora-postgresql
+          description: Relational database (Aurora)
+        cache:
+          title: Cache
+          type: string
+          enum:
+            - elasticache-redis
+            - none
+          enumNames:
+            - "ElastiCache Redis"
+            - "None"
+          default: none
+          description: ElastiCache Redis (also used for Action Cable and Sidekiq)
+
+    - title: Background Jobs & WebSockets
+      properties:
+        jobProcessor:
+          title: Job Processor
+          type: string
+          enum:
+            - sidekiq
+            - solid-queue
+            - none
+          enumNames:
+            - "Sidekiq (Requires Redis)"
+            - "Solid Queue (Rails 8+, Database-backed)"
+            - "None"
+          default: none
+          description: Background job processor
+        actionCable:
+          title: Action Cable
+          type: boolean
+          default: false
+          description: Enable WebSocket support via Action Cable (requires Redis)
+
+    - title: API Features
+      properties:
+        authentication:
+          title: Authentication
+          type: string
+          enum:
+            - devise-jwt
+            - doorkeeper
+            - none
+          enumNames:
+            - "Devise + JWT"
+            - "Doorkeeper (OAuth2)"
+            - "None"
+          default: none
+          description: Authentication strategy
+        serializer:
+          title: JSON Serializer
+          type: string
+          enum:
+            - alba
+            - blueprinter
+            - jsonapi-serializer
+          enumNames:
+            - "Alba (Fastest)"
+            - "Blueprinter"
+            - "JSON:API Serializer"
+          default: alba
+          description: JSON serialization library
+        pagination:
+          title: Pagination
+          type: string
+          enum:
+            - pagy
+            - kaminari
+            - none
+          enumNames:
+            - "Pagy (Fastest)"
+            - "Kaminari"
+            - "None"
+          default: pagy
+          description: Pagination library
+
+    - title: Repository
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: fetch-skeleton
+      name: Fetch Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+          description: ${{ parameters.description }}
+          rubyVersion: ${{ parameters.rubyVersion }}
+          railsVersion: ${{ parameters.railsVersion }}
+          database: ${{ parameters.database }}
+          cache: ${{ parameters.cache }}
+          jobProcessor: ${{ parameters.jobProcessor }}
+          actionCable: ${{ parameters.actionCable }}
+          authentication: ${{ parameters.authentication }}
+          serializer: ${{ parameters.serializer }}
+          pagination: ${{ parameters.pagination }}
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        allowedHosts:
+          - github.com
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        protectDefaultBranch: true
+        repoVisibility: private
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in Backstage
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

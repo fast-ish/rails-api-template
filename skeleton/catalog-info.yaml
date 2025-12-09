@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.name}}
+  description: ${{values.description}}
+  annotations:
+    github.com/project-slug: ${{values.orgName}}/${{values.name}}
+    backstage.io/techdocs-ref: dir:.
+    grafana.com/service-name: ${{values.name}}
+  tags:
+    - rails
+    - ruby
+    - api
+spec:
+  type: service
+  lifecycle: production
+  owner: ${{values.owner}}
+  {%- if values.database != "none" %}
+  dependsOn:
+    - resource:aurora-database
+  {%- endif %}
+  providesApis:
+    - ${{values.name}}-api
