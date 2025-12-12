@@ -1,0 +1,15 @@
+# =============================================================================
+# ARGO CI CONFIGURATION
+# =============================================================================
+language: ruby
+team: ${{values.owner | replace("group:", "") | replace("team-", "")}}
+
+config:
+  ruby-version: "${{values.rubyVersion}}"
+  skip-tests: false
+  deploy-enabled: true
+  rollout-strategy: canary
+
+  analysis:
+    success-rate-threshold: "0.95"
+    latency-p99-threshold: "500"

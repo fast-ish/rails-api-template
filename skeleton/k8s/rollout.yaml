@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: ${{values.name}}
+  labels:
+    app.kubernetes.io/name: ${{values.name}}
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: ${{values.owner | replace("group:", "") | replace("team-", "")}}
+    fasti.sh/template: rails-api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ${{values.name}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ${{values.name}}
+        app.kubernetes.io/component: api
+      annotations:
+        instrumentation.opentelemetry.io/inject-ruby: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ${{values.owner | replace("group:", "") | replace("team-", "")}}-workload
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: ${{values.name}}
+          image: IMAGE_PLACEHOLDER:latest
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: RAILS_ENV
+              value: production
+            - name: RAILS_LOG_TO_STDOUT
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: "${{values.name}}"
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: ${{values.name}}-secrets
+                  key: SECRET_KEY_BASE
+          envFrom:
+            - secretRef:
+                name: ${{values.name}}-secrets
+                optional: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10
+        - pause: {duration: 1m}
+        - setWeight: 30
+        - pause: {duration: 2m}
+        - setWeight: 60
+        - pause: {duration: 2m}
+      analysis:
+        templates:
+          - templateName: success-rate
+        startingStep: 1
+        args:
+          - name: service-name
+            value: ${{values.name}}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+      maxUnavailable: 0
+      maxSurge: 1
